@@ -4,7 +4,7 @@ use core::marker::PhantomData;
 
 /// a trait which when implemented by some type states that the type's memory representation can be treated directly as a slice of
 /// type `T`, with a length that is according to the `LENGTH` constant.
-pub unsafe trait RecursiveArray<T>: Sized {
+pub unsafe trait RecursiveArray<T>: Sized + AsRef<[T]> + AsMut<[T]> {
     /// the length of this array
     const LENGTH: usize;
 
@@ -133,6 +133,16 @@ pub unsafe trait RecursiveArray<T>: Sized {
 /// an empty recrusive array.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
 pub struct EmptyRecursiveArray;
+impl<T> AsRef<[T]> for EmptyRecursiveArray {
+    fn as_ref(&self) -> &[T] {
+        &[]
+    }
+}
+impl<T> AsMut<[T]> for EmptyRecursiveArray {
+    fn as_mut(&mut self) -> &mut [T] {
+        &mut []
+    }
+}
 unsafe impl<T> RecursiveArray<T> for EmptyRecursiveArray {
     const LENGTH: usize = 0;
 }
@@ -142,6 +152,16 @@ unsafe impl<T> RecursiveArray<T> for EmptyRecursiveArray {
 #[repr(transparent)]
 pub struct RecursiveArraySingleItem<T> {
     item: T,
+}
+impl<T> AsRef<[T]> for RecursiveArraySingleItem<T> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+impl<T> AsMut<[T]> for RecursiveArraySingleItem<T> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self.as_mut_slice()
+    }
 }
 unsafe impl<T> RecursiveArray<T> for RecursiveArraySingleItem<T> {
     const LENGTH: usize = 1;
@@ -160,6 +180,20 @@ pub struct RecursiveArrayConcatenation<T, A: RecursiveArray<T>, B: RecursiveArra
     a: A,
     b: B,
     phantom: PhantomData<T>,
+}
+impl<T, A: RecursiveArray<T>, B: RecursiveArray<T>> AsRef<[T]>
+    for RecursiveArrayConcatenation<T, A, B>
+{
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+impl<T, A: RecursiveArray<T>, B: RecursiveArray<T>> AsMut<[T]>
+    for RecursiveArrayConcatenation<T, A, B>
+{
+    fn as_mut(&mut self) -> &mut [T] {
+        self.as_mut_slice()
+    }
 }
 unsafe impl<T, A: RecursiveArray<T>, B: RecursiveArray<T>> RecursiveArray<T>
     for RecursiveArrayConcatenation<T, A, B>
@@ -189,6 +223,16 @@ impl<const N: usize, T> RecursiveArrayArrayWrapper<N, T> {
         Self { array }
     }
 }
+impl<const N: usize, T> AsRef<[T]> for RecursiveArrayArrayWrapper<N, T> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+impl<const N: usize, T> AsMut<[T]> for RecursiveArrayArrayWrapper<N, T> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self.as_mut_slice()
+    }
+}
 unsafe impl<const N: usize, T> RecursiveArray<T> for RecursiveArrayArrayWrapper<N, T> {
     const LENGTH: usize = N;
 }
@@ -207,6 +251,16 @@ impl<const N: usize, T, A: RecursiveArray<T>> RecursiveArrayMultiplier<N, T, A> 
             multiplied: values,
             phantom: PhantomData,
         }
+    }
+}
+impl<const N: usize, T, A: RecursiveArray<T>> AsRef<[T]> for RecursiveArrayMultiplier<N, T, A> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+impl<const N: usize, T, A: RecursiveArray<T>> AsMut<[T]> for RecursiveArrayMultiplier<N, T, A> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self.as_mut_slice()
     }
 }
 unsafe impl<const N: usize, T, A: RecursiveArray<T>> RecursiveArray<T>
