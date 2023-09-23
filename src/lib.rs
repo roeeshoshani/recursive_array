@@ -193,6 +193,28 @@ unsafe impl<const N: usize, T> RecursiveArray<T> for RecursiveArrayArrayWrapper<
     const LENGTH: usize = N;
 }
 
+/// a recursive array which multiplies the given inner recursive array type `N` times.
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct RecursiveArrayMultiplier<const N: usize, T, A: RecursiveArray<T>> {
+    multiplied: [A; N],
+    phantom: PhantomData<T>,
+}
+impl<const N: usize, T, A: RecursiveArray<T>> RecursiveArrayMultiplier<N, T, A> {
+    /// creates a new recursive array multiplier with the given values.
+    pub fn new(values: [A; N]) -> Self {
+        Self {
+            multiplied: values,
+            phantom: PhantomData,
+        }
+    }
+}
+unsafe impl<const N: usize, T, A: RecursiveArray<T>> RecursiveArray<T>
+    for RecursiveArrayMultiplier<N, T, A>
+{
+    const LENGTH: usize = A::LENGTH * N;
+}
+
 /// a macro for instantiating a recursive array with the given elements.
 #[macro_export]
 macro_rules! recursive_array {
