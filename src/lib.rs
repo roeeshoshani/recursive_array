@@ -16,6 +16,40 @@ pub unsafe trait RecursiveArray<T>: Sized {
         EmptyRecursiveArray
     }
 
+    /// converts the given array to a recursive array.
+    ///
+    /// # Panics
+    ///
+    /// this function panics if the length of the array (`N`) is not equal to `Self::LENGTH`.
+    /// this condition currently can't be checked at compile time due to the limitation of const generics.
+    fn from_array<const N: usize>(array: [T; N]) -> Self {
+        if N != Self::LENGTH {
+            panic!(
+                "tried to convert an array of length {} to a recursive array of length {}",
+                N,
+                Self::LENGTH,
+            );
+        }
+        unsafe { runtime_checked_transmute(array) }
+    }
+
+    /// converts this recrusive array to a regular array (`[T; N]`).
+    ///
+    /// # Panics
+    ///
+    /// this function panics if the length of the array (`N`) is not equal to `Self::LENGTH`.
+    /// this condition currently can't be checked at compile time due to the limitation of const generics.
+    fn to_array<const N: usize>(self) -> [T; N] {
+        if N != Self::LENGTH {
+            panic!(
+                "tried to convert a recursive array of length {} to an array of length {}",
+                Self::LENGTH,
+                N,
+            );
+        }
+        unsafe { runtime_checked_transmute(self) }
+    }
+
     /// converts the given slice to a recursive array reference. this is a zero cost operation, which just casts the slice.
     ///
     /// # Panics
@@ -90,14 +124,6 @@ pub unsafe trait RecursiveArray<T>: Sized {
         RecursiveArrayConcatenation::new(array, self)
     }
 }
-
-/// a type used for comparing 2 const usizes for equality at compile time.
-pub struct CompareConstUsizes<const A: usize, const B: usize>;
-
-/// a trait which is used for representing the condition that 2 const usizes are equal at compile time, by applying it as a constraint
-/// on the `CompareConstUsizes` type.
-pub trait ConstUsizesEqual {}
-impl<const N: usize> ConstUsizesEqual for CompareConstUsizes<N, N> {}
 
 /// an empty recrusive array.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
@@ -185,4 +211,28 @@ macro_rules! recursive_array_type_of_size {
     ($item_type: ty, $size: expr) => {
         ::recursive_array::RecursiveArrayArrayWrapper<{$size}, $item_type>
     };
+}
+
+/// A const reimplementation of the [`transmute`](core::mem::transmute) function,
+/// avoiding problems when the compiler can't prove equal sizes.
+///
+/// # Safety
+/// Treat this the same as [`transmute`](core::mem::transmute), or (preferably) don't use it at all.
+unsafe fn runtime_checked_transmute<A, B>(a: A) -> B {
+    if core::mem::size_of::<A>() != core::mem::size_of::<B>() {
+        panic!(
+            "tried to transmute a type of size {} to a type of size {}",
+            core::mem::size_of::<A>(),
+            core::mem::size_of::<B>()
+        );
+    }
+
+    #[repr(C)]
+    union Union<A, B> {
+        a: core::mem::ManuallyDrop<A>,
+        b: core::mem::ManuallyDrop<B>,
+    }
+
+    let a = core::mem::ManuallyDrop::new(a);
+    core::mem::ManuallyDrop::into_inner(Union { a }.b)
 }
