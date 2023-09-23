@@ -16,6 +16,11 @@ pub unsafe trait RecursiveArray<T>: Sized {
         EmptyRecursiveArray
     }
 
+    /// returns the length of this recursive array.
+    fn len(&self) -> usize {
+        Self::LENGTH
+    }
+
     /// converts the given array to a recursive array.
     ///
     /// # Panics
