@@ -210,6 +210,21 @@ impl<T, A: RecursiveArray<T>, B: RecursiveArray<T>> RecursiveArrayConcatenation<
         }
     }
 }
+impl<T, A: RecursiveArray<T>> RecursiveArrayConcatenation<T, A, RecursiveArraySingleItem<T>> {
+    /// pops an element from the back of this array.
+    /// returns a tuple whose first element is the popped item and its second element is the rest of the array.
+    pub fn pop_back(self) -> (T, A) {
+        (self.b.item, self.a)
+    }
+}
+
+impl<T, B: RecursiveArray<T>> RecursiveArrayConcatenation<T, RecursiveArraySingleItem<T>, B> {
+    /// pops an element from the front of this array.
+    /// returns a tuple whose first element is the popped item and its second element is the rest of the array.
+    pub fn pop_front(self) -> (T, B) {
+        (self.a.item, self.b)
+    }
+}
 
 /// a recursive array wrapper which wraps a regular rust array (`[T; N]`) and allows it to be treated as a recursive array.
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
