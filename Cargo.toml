@@ -1,6 +1,6 @@
 [package]
 name = "recursive_array"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Roee Shoshani"]
 description = "an implementation of arrays using recrusive data structures to avoid limitations of the rust compiler"
